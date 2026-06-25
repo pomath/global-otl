@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Jobs — gotl{% endblock %}
+
+{% block content %}
+<h1>Jobs</h1>
+
+<details>
+    <summary>Submit New Job</summary>
+    <form hx-post="/api/jobs" hx-target="#submit-msg" hx-swap="innerHTML">
+        <div class="grid">
+            <label>
+                Command
+                <select name="command" id="job-command" onchange="toggleJobFields()">
+                    <option value="run">Run Pipeline</option>
+                    <option value="run-all">Run All</option>
+                    <option value="compare">Compare</option>
+                    <option value="gen-hardisp">Generate Hardisp</option>
+                    <option value="gen-otl-params">Generate OTL Params (LoadDef)</option>
+                    <option value="download-rinex">Download RINEX</option>
+                    <option value="process-rinex">Process RINEX (GipsyX)</option>
+                </select>
+            </label>
+            <label>
+                Station (4-letter code)
+                <input type="text" name="station" placeholder="e.g. aboa" maxlength="4">
+            </label>
+        </div>
+        <div class="grid" id="fields-otl" style="display:none;">
+            <label>
+                Tide Model
+                <select name="tide_model">
+                    <option value="FES2014">FES2014</option>
+                    <option value="TPXO9">TPXO9</option>
+                    <option value="EOT20">EOT20</option>
+                    <option value="FES2014b">FES2014b</option>
+                </select>
+            </label>
+            <label>
+                Earth Model
+                <input type="text" name="earth_model" placeholder="PREM" value="PREM">
+            </label>
+        </div>
+        <div class="grid" id="fields-rinex" style="display:none;">
+            <label>
+                Start Date
+                <input type="date" name="start">
+            </label>
+            <label>
+                End Date
+                <input type="date" name="end">
+            </label>
+        </div>
+        <div class="grid" id="fields-hardisp" style="display:none;">
+            <label>
+                Years (comma-separated)
+                <input type="text" name="years" placeholder="e.g. 2020,2021,2022">
+            </label>
+        </div>
+        <button type="submit">Submit Job</button>
+    </form>
+    <div id="submit-msg"></div>
+</details>
+
+<h2>Job History</h2>
+<div hx-get="/api/jobs/table" hx-trigger="load, every 5s" hx-swap="innerHTML">
+    <p aria-busy="true">Loading jobs...</p>
+</div>
+
+<h2>Log Viewer</h2>
+<div id="log-viewer">
+    <p>Click a job ID above to view its log.</p>
+</div>
+{% endblock %}

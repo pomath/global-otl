@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}gotl Dashboard{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+    <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+    <nav class="container-fluid">
+        <ul>
+            <li><strong>gotl</strong></li>
+        </ul>
+        <ul>
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/stations">Stations</a></li>
+            <li><a href="/compare">Compare</a></li>
+            <li><a href="/compare/map">Difference Map</a></li>
+            <li><a href="/jobs">Jobs</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="container">
+        <small>gotl — Global GPS Ocean Tidal Loading Analysis</small>
+    </footer>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

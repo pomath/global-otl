@@ -1,0 +1,32 @@
+/* gotl dashboard overrides */
+
+nav {
+    border-bottom: 1px solid var(--pico-muted-border-color);
+    margin-bottom: 1rem;
+}
+
+.tab-content {
+    min-height: 200px;
+}
+
+/* Status indicator colors */
+.status-done { color: #2ecc71; }
+.status-running { color: #3498db; }
+.status-queued { color: #f39c12; }
+.status-failed { color: #e74c3c; }
+
+/* Log viewer */
+#log-viewer pre {
+    max-height: 400px;
+    overflow-y: auto;
+    font-size: 0.8rem;
+    background: var(--pico-card-background-color);
+    padding: 1rem;
+    border-radius: var(--pico-border-radius);
+}
+
+/* Summary cards */
+article header {
+    font-size: 0.9rem;
+    color: var(--pico-muted-color);
+}

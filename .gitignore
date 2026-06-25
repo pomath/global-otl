@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+.venv/
+
+# Poetry
+poetry.lock
+
+# Large data files (external)
+*.nc
+*.tif
+*.tdp
+*.zip
+*.mat
+*.h5
+results/
+hardisp/*.txt
+hardisp/hardisp_exe
+
+# Hardisp binary (platform-specific, build locally)
+hardisp/hardisp_exe
+hardisp/**/*.o
+hardisp/**/*.a
+
+# Old code archives (uploaded reference material)
+old_code/
+
+# OTL params (requested separately per station)
+data/otl_params/
+
+# Logs
+*.log
+logs/
+
+# Test data (RINEX, JPL products — downloaded for integration testing)
+test_data/
+
+# LoadDef (external library, extract from old_code/LoadDef-main.zip)
+LoadDef-main/
+
+# LoadDef data (large files: land-sea mask, convolution grids)
+data/loaddef/
+
+# IDE
+.vscode/
+.idea/
+*.swp

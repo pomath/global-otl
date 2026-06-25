@@ -1,0 +1,48 @@
+<figure>
+<table role="grid">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Command</th>
+            <th>Station</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th>Elapsed</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for job in jobs %}
+        <tr>
+            <td>
+                <a href="#" onclick="loadLog('{{ job.id }}'); return false;">{{ job.id }}</a>
+            </td>
+            <td>{{ job.command }}</td>
+            <td>{{ job.station or '—' }}</td>
+            <td>
+                {% if job.status.value == 'done' %}
+                    <span style="color:#2ecc71">&#9679; done</span>
+                {% elif job.status.value == 'running' %}
+                    <span style="color:#3498db">&#9679; running</span>
+                {% elif job.status.value == 'queued' %}
+                    <span style="color:#f39c12">&#9679; queued</span>
+                {% elif job.status.value == 'failed' %}
+                    <span style="color:#e74c3c">&#9679; failed</span>
+                {% else %}
+                    <span>&#9679; {{ job.status.value }}</span>
+                {% endif %}
+            </td>
+            <td>{{ job.created_at.strftime('%H:%M:%S') if job.created_at else '—' }}</td>
+            <td>{{ elapsed[job.id] }}</td>
+            <td>
+                {% if job.status.value in ('queued', 'running') %}
+                <button class="outline" hx-delete="/api/jobs/{{ job.id }}" hx-target="closest tr" hx-swap="outerHTML" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                    Cancel
+                </button>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</figure>

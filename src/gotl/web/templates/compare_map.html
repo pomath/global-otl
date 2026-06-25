@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Difference Map — gotl{% endblock %}
+
+{% block content %}
+<h1>GPS vs Ocean Tide Model — Difference Map</h1>
+<p>Each marker is a processed station coloured by the disagreement between the
+VTide-derived OTL coefficient and the selected ocean tide model.</p>
+
+<form id="diff-map-controls">
+    <div class="grid">
+        <label>
+            Constituent
+            <select name="constituent">
+                {% for c in constituents %}
+                <option value="{{ c }}"{% if c == "M2" %} selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>
+            Model
+            <select name="model">
+                {% for m in models %}
+                <option value="{{ m }}">{{ m }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>
+            Component
+            <select name="component">
+                <option value="U" selected>Up (U)</option>
+                <option value="S">South (S)</option>
+                <option value="W">West (W)</option>
+            </select>
+        </label>
+        <label>
+            Metric
+            <select name="metric">
+                <option value="vmfit" selected>Vector misfit (mm)</option>
+                <option value="damp">Signed amp diff (mm)</option>
+                <option value="abs_damp">|amp diff| (mm)</option>
+            </select>
+        </label>
+    </div>
+</form>
+
+<div id="diff-map"></div>
+
+<script>
+(function() {
+    const form = document.getElementById('diff-map-controls');
+    const target = document.getElementById('diff-map');
+
+    function render() {
+        const params = new URLSearchParams(new FormData(form));
+        fetch('/api/compare/map?' + params.toString())
+            .then(r => r.json())
+            .then(fig => {
+                Plotly.react(target, fig.data || [], fig.layout || {},
+                             {responsive: true});
+            });
+    }
+
+    form.querySelectorAll('select').forEach(el => el.addEventListener('change', render));
+    render();
+})();
+</script>
+{% endblock %}

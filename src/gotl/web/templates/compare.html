@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Compare — gotl{% endblock %}
+
+{% block content %}
+<h1>Multi-Station Comparison</h1>
+
+<p>See also: <a href="/compare/map">Difference Map</a> for a geographic view.</p>
+
+<form hx-get="/api/compare/summary" hx-target="#compare-results" hx-swap="innerHTML">
+    <div class="grid">
+        <label>
+            Component
+            <select name="component">
+                <option value="U" selected>Up (U)</option>
+                <option value="S">South (S)</option>
+                <option value="W">West (W)</option>
+            </select>
+        </label>
+    </div>
+    <button type="submit">Compute Summary</button>
+</form>
+
+<div id="compare-results">
+    <p>Select a component and click "Compute Summary" to see aggregate model comparison statistics across all processed stations.</p>
+</div>
+{% endblock %}

@@ -1,0 +1,56 @@
+[tool.poetry]
+name = "gotl"
+version = "0.2.0"
+description = "Global GPS ocean tidal loading analysis"
+authors = ["Peter Matheston <peter.matheston@proton.me>"]
+packages = [{ include = "gotl", from = "src" }]
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.14"
+numpy = ">=1.26,<3.0"
+scipy = ">=1.13,<2.0"
+pandas = ">=2.2,<3.0"
+pymap3d = ">=3.1,<4.0"
+vtide = ">=0.1.0"
+utide = ">=0.3.0"           # vtide uses utide internally for constituent selection
+h5py = ">=3.11,<4.0"
+click = ">=8.1,<9.0"
+netcdf4 = ">=1.7,<2.0"     # TPXO9 / FES2014 / EOT20 NetCDF tide models
+requests = ">=2.31,<3.0"   # RINEX downloads from CDDIS/BKG archives
+
+[tool.poetry.group.loaddef]
+optional = true
+
+[tool.poetry.group.loaddef.dependencies]
+mpi4py = ">=3.1,<4.0"      # LoadDef MPI convolution (requires MPI dev headers)
+
+[tool.poetry.group.web]
+optional = true
+
+[tool.poetry.group.web.dependencies]
+fastapi = ">=0.115"
+uvicorn = {version = ">=0.30", extras = ["standard"]}
+jinja2 = ">=3.1"
+plotly = ">=5.24"
+aiosqlite = ">=0.20"
+python-multipart = ">=0.0.9"
+
+[tool.poetry.group.cloud]
+optional = true
+
+[tool.poetry.group.cloud.dependencies]
+coiled = ">=1.0"
+boto3 = ">=1.34"
+dask = {version = ">=2024.1", extras = ["distributed"]}
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8.0"
+pytest-cov = ">=5.0"
+ruff = ">=0.4"
+
+[tool.poetry.scripts]
+gotl = "gotl.cli:main"
+
+[build-system]
+requires = ["poetry-core>=2.0.0"]
+build-backend = "poetry.core.masonry.api"

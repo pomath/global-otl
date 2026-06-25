@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}{{ stnm | upper }} — gotl{% endblock %}
+
+{% block content %}
+<hgroup>
+    <h1>{{ stnm | upper }}</h1>
+    <p>{{ meta.network }} &mdash; {{ "%.4f" | format(meta.lat) }}&deg;N, {{ "%.4f" | format(meta.lon) }}&deg;E, {{ "%.1f" | format(meta.alt_m) }}m
+    {% if meta.data_start %} &mdash; {{ meta.data_start.strftime('%Y-%m-%d') }} to {{ meta.data_end.strftime('%Y-%m-%d') }}{% endif %}
+    </p>
+</hgroup>
+
+<h3>Pipeline Status</h3>
+<div class="grid">
+    {% for step, done in steps.items() %}
+    <article style="text-align:center; {% if done %}border-left: 4px solid #2ecc71{% else %}border-left: 4px solid #e74c3c{% endif %}">
+        <strong>{{ step }}</strong><br>
+        {% if done %}<span style="color:#2ecc71; font-size:1.5rem;">&#10003;</span>{% else %}<span style="color:#e74c3c; font-size:1.5rem;">&#10007;</span>{% endif %}
+    </article>
+    {% endfor %}
+</div>
+
+{% if quality %}
+<h3>Data Quality</h3>
+<article style="border-left: 4px solid {% if quality.pct > 0.1 %}#e67e22{% else %}#2ecc71{% endif %}">
+    <strong>Outlier Masking</strong>:
+    {{ quality.n_dropped }} / {{ quality.n_total }} epochs dropped
+    (<strong style="color: {% if quality.pct > 0.1 %}#e67e22{% else %}#2ecc71{% endif %}">{{ "%.3f" | format(quality.pct) }}%</strong>)
+    {% if quality.pct > 0.1 %}
+    &mdash; <small>above 0.1% threshold</small>
+    {% endif %}
+    <br>
+    <small>
+        Max |residual|: U={{ "%.2f" | format(quality.max_abs_u) }}m,
+        S={{ "%.2f" | format(quality.max_abs_s) }}m,
+        W={{ "%.2f" | format(quality.max_abs_w) }}m
+    </small>
+</article>
+{% endif %}
+
+<h3>Actions</h3>
+
+<h5>Download RINEX Data</h5>
+<form hx-post="/api/jobs" hx-target="#action-msg" hx-swap="innerHTML" style="display:flex; gap:0.5rem; align-items:end; flex-wrap:wrap;">
+    <input type="hidden" name="command" value="download-rinex">
+    <input type="hidden" name="station" value="{{ stnm }}">
+    <label style="margin-bottom:0;">
+        Start
+        <input type="date" name="start" {% if meta.data_start %}value="{{ meta.data_start.strftime('%Y-%m-%d') }}"{% endif %} required>
+    </label>
+    <label style="margin-bottom:0;">
+        End
+        <input type="date" name="end" {% if meta.data_end %}value="{{ meta.data_end.strftime('%Y-%m-%d') }}"{% endif %} required>
+    </label>
+    <button type="submit">Download RINEX</button>
+</form>
+
+<h5>Phase 0 — GipsyX RINEX Processing</h5>
+<form hx-post="/api/jobs" hx-target="#action-msg" hx-swap="innerHTML" style="display:flex; gap:0.5rem; align-items:end; flex-wrap:wrap;">
+    <input type="hidden" name="command" value="process-rinex">
+    <input type="hidden" name="station" value="{{ stnm }}">
+    <label style="margin-bottom:0;">
+        Start
+        <input type="date" name="start" {% if meta.data_start %}value="{{ meta.data_start.strftime('%Y-%m-%d') }}"{% endif %}>
+    </label>
+    <label style="margin-bottom:0;">
+        End
+        <input type="date" name="end" {% if meta.data_end %}value="{{ meta.data_end.strftime('%Y-%m-%d') }}"{% endif %}>
+    </label>
+    <button type="submit">Process RINEX</button>
+</form>
+
+<h5>Phase 1 — LoadDef OTL Parameters</h5>
+<form hx-post="/api/jobs" hx-target="#action-msg" hx-swap="innerHTML" style="display:flex; gap:0.5rem; align-items:end; flex-wrap:wrap;">
+    <input type="hidden" name="command" value="gen-otl-params">
+    <input type="hidden" name="station" value="{{ stnm }}">
+    <label style="margin-bottom:0;">
+        Tide Model
+        <select name="tide_model" style="width:auto;">
+            <option value="FES2014">FES2014</option>
+            <option value="TPXO9">TPXO9</option>
+            <option value="EOT20">EOT20</option>
+            <option value="FES2014b">FES2014b</option>
+        </select>
+    </label>
+    <button type="submit">Generate OTL Params</button>
+</form>
+
+<h5>Phases 2–5 — Hardisp, SLTM, VTide, Compare</h5>
+<div role="group">
+    <button hx-post="/api/jobs" hx-vals='{"command":"gen-hardisp","station":"{{ stnm }}"}' hx-target="#action-msg" hx-swap="innerHTML">
+        Generate Hardisp
+    </button>
+    <button hx-post="/api/jobs" hx-vals='{"command":"run","station":"{{ stnm }}"}' hx-target="#action-msg" hx-swap="innerHTML" class="secondary">
+        Run Pipeline
+    </button>
+    <button hx-post="/api/jobs" hx-vals='{"command":"compare","station":"{{ stnm }}"}' hx-target="#action-msg" hx-swap="innerHTML" class="contrast">
+        Run Compare
+    </button>
+</div>
+
+<div id="action-msg"></div>
+
+<h3>Plots</h3>
+
+<!-- Tabs -->
+<div role="group">
+    <button class="tab-btn" onclick="showTab('tab-ts')" id="btn-tab-ts">Time Series</button>
+    <button class="tab-btn secondary" onclick="showTab('tab-const')" id="btn-tab-const">Constituents</button>
+    <button class="tab-btn contrast" onclick="showTab('tab-cmp')" id="btn-tab-cmp">Comparison</button>
+</div>
+
+<div id="tab-ts" class="tab-content">
+    <div hx-get="/api/plots/timeseries/{{ stnm }}" hx-trigger="load" hx-swap="innerHTML">
+        <p aria-busy="true">Loading time series...</p>
+    </div>
+</div>
+
+<div id="tab-const" class="tab-content" style="display:none;">
+    <div hx-get="/api/plots/constituents/{{ stnm }}" hx-trigger="revealed" hx-swap="innerHTML">
+        <p aria-busy="true">Loading constituents...</p>
+    </div>
+</div>
+
+<div id="tab-cmp" class="tab-content" style="display:none;">
+    <div hx-get="/api/plots/comparison/{{ stnm }}" hx-trigger="revealed" hx-swap="innerHTML">
+        <p aria-busy="true">Loading comparison...</p>
+    </div>
+</div>
+{% endblock %}

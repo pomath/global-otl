@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Stations — gotl{% endblock %}
+
+{% block content %}
+<h1>Stations</h1>
+
+<div id="station-map"></div>
+<script>
+    fetch('/api/plots/map')
+        .then(r => r.json())
+        .then(fig => {
+            Plotly.newPlot('station-map', fig.data, fig.layout, {responsive: true})
+                .then(gd => {
+                    gd.on('plotly_click', function(data) {
+                        var stnm = data.points[0].customdata;
+                        if (stnm) window.location.href = '/station/' + stnm;
+                    });
+                });
+        });
+</script>
+
+<h2>Station List</h2>
+<figure>
+<table role="grid">
+    <thead>
+        <tr>
+            <th>Station</th>
+            <th>Network</th>
+            <th>Lat</th>
+            <th>Lon</th>
+            <th>TDP</th>
+            <th>Hardisp</th>
+            <th>Combined</th>
+            <th>OTL Coeff</th>
+            <th>Quality</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in stations %}
+        <tr>
+            <td><a href="/station/{{ s.stnm }}">{{ s.stnm | upper }}</a></td>
+            <td>{{ s.network }}</td>
+            <td>{{ "%.4f" | format(s.lat) }}</td>
+            <td>{{ "%.4f" | format(s.lon) }}</td>
+            <td>{{ "&#10003;" if s.has_tdp else "&#10007;" }}</td>
+            <td>{{ "&#10003;" if s.has_hardisp else "&#10007;" }}</td>
+            <td>{{ "&#10003;" if s.has_combined else "&#10007;" }}</td>
+            <td>{{ "&#10003;" if s.has_otl_coeff else "&#10007;" }}</td>
+            <td>
+                {% if s.quality %}
+                    {% if s.quality.pct > 0.1 %}
+                        <span style="color:#e67e22" title="{{ s.quality.n_dropped }}/{{ s.quality.n_total }} dropped">{{ "%.2f" | format(s.quality.pct) }}%</span>
+                    {% else %}
+                        <span style="color:#2ecc71" title="{{ s.quality.n_dropped }}/{{ s.quality.n_total }} dropped">{{ "%.2f" | format(s.quality.pct) }}%</span>
+                    {% endif %}
+                {% else %}
+                    &mdash;
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</figure>
+{% endblock %}

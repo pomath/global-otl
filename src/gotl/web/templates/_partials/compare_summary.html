@@ -1,0 +1,34 @@
+<h3>Constituent Summary — {{ component }} Component</h3>
+
+{% if stations_used == 0 %}
+<p>No stations have completed the pipeline yet. Run processing first.</p>
+{% else %}
+<p>Based on {{ stations_used }} processed station(s).</p>
+
+{% if rms_table %}
+<h4>RMS Vector Misfit by Model</h4>
+<figure>
+<table role="grid">
+    <thead>
+        <tr><th>Model</th><th>RMS Vmfit (mm)</th><th>Stations</th></tr>
+    </thead>
+    <tbody>
+        {% for row in rms_table %}
+        <tr>
+            <td>{{ row.model }}</td>
+            <td>{{ "%.3f" | format(row.rms_mm) }}</td>
+            <td>{{ row.n_stations }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</figure>
+{% endif %}
+
+{% if const_fig %}
+<div id="const-summary-plot"></div>
+<script>
+    Plotly.newPlot('const-summary-plot', {{ const_fig_json | safe }}, {responsive: true});
+</script>
+{% endif %}
+{% endif %}

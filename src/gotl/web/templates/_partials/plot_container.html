@@ -1,0 +1,8 @@
+{% if fig %}
+<div id="plot-{{ plot_id }}"></div>
+<script>
+    Plotly.newPlot('plot-{{ plot_id }}', {{ fig_json | safe }}, {responsive: true});
+</script>
+{% else %}
+<p>No data available for this plot. Run the pipeline first.</p>
+{% endif %}

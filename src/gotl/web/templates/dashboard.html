@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}gotl Dashboard{% endblock %}
+
+{% block content %}
+<h1>Dashboard</h1>
+
+<div class="grid">
+    <article>
+        <header>Total Stations</header>
+        <p style="font-size: 2rem; font-weight: bold;">{{ total }}</p>
+    </article>
+    <article>
+        <header>Complete (4/4)</header>
+        <p style="font-size: 2rem; font-weight: bold; color: #2ecc71;">{{ complete }}</p>
+    </article>
+    <article>
+        <header>Partial</header>
+        <p style="font-size: 2rem; font-weight: bold; color: #f39c12;">{{ partial }}</p>
+    </article>
+    <article>
+        <header>Unprocessed</header>
+        <p style="font-size: 2rem; font-weight: bold; color: #e74c3c;">{{ unprocessed }}</p>
+    </article>
+</div>
+
+<div class="grid">
+    <div>
+        <h2>Quick Actions</h2>
+        <div role="group">
+            <a href="/stations" role="button">View Stations</a>
+            <a href="/compare" role="button" class="secondary">Compare Models</a>
+            <a href="/jobs" role="button" class="contrast">View Jobs</a>
+        </div>
+    </div>
+</div>
+
+<h2>Recent Jobs</h2>
+<div hx-get="/api/jobs/recent-table" hx-trigger="load, every 10s" hx-swap="innerHTML">
+    <p aria-busy="true">Loading...</p>
+</div>
+{% endblock %}
