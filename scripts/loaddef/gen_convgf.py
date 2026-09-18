@@ -17,6 +17,11 @@ Usage::
         --input /path/to/tide_models/EOT20 \
         --output data/loaddef/Grid_Files/nc/OTL
 
+    # Same pattern for tpxo10 | fes2022 | fes2004 | dtu23 | got55.
+    # These probe filenames case-insensitively (per-constituent .nc with
+    # the model token in the name); the gridded reader sniffs variable
+    # names and units, so archive-layout drift usually just works.
+
 Output filenames follow the LoadDef convention
 ``convgf_{MODEL}-{CONST}.nc``, matching ``TIDE_MODEL_PREFIXES`` in
 ``src/gotl/loaddef/batch.py``.
@@ -24,6 +29,7 @@ Output filenames follow the LoadDef convention
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 
@@ -41,6 +47,30 @@ _GOTL_CONSTS = ["M2", "S2", "N2", "K2", "K1", "O1", "P1", "Q1", "MF", "MM", "SSA
 def _tpxo9_input(input_dir: Path, const: str) -> Path | None:
     candidate = input_dir / f"h_{const.lower()}_tpxo9_atlas_30_v5.nc"
     return candidate if candidate.exists() else None
+
+
+def _token_input(*tokens: str):
+    """Build an input probe for per-constituent .nc files.
+
+    Matches (case-insensitively) any ``.nc`` in the input directory whose
+    name contains every ``token`` and the constituent as a delimited token
+    (so ``m2`` hits ``h_m2_tpxo10_atlas_30_v2.nc`` but not ``mm2``).
+    Exact archive naming varies by provider/mirror; probing beats
+    hard-coding one spelling (cf. the EOT20 case mess above).
+    """
+    def probe(input_dir: Path, const: str) -> Path | None:
+        pat = re.compile(rf"(?<![a-z0-9]){re.escape(const.lower())}(?![a-z0-9])")
+        hits = sorted(
+            p for p in input_dir.glob("*.nc")
+            if all(t in p.name.lower() for t in tokens)
+            and pat.search(p.name.lower())
+        )
+        if hits:
+            return hits[0]
+        # Some archives name files bare, e.g. GOT's "m2.nc".
+        bare = input_dir / f"{const.lower()}.nc"
+        return bare if bare.exists() else None
+    return probe
 
 
 def _eot20_input(input_dir: Path, const: str) -> Path | None:
@@ -126,6 +156,78 @@ def _read_eot20(filename: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.
     return grid_lat.flatten(), grid_lon.flatten(), amp.flatten(), pha.flatten()
 
 
+def _amp_scale(var) -> float:
+    """Metres-per-unit from a NetCDF variable's ``units`` attribute.
+
+    Tide-model grids ship in cm (FES, EOT, GOT convention), mm, or m;
+    fall back to cm when the attribute is absent since that is by far
+    the most common.
+    """
+    units = str(getattr(var, "units", "")).strip().lower()
+    if units.startswith("mm") or "millimet" in units:
+        return 1e-3
+    if units.startswith("cm") or "centimet" in units:
+        return 1e-2
+    if units.startswith("m") and "deg" not in units:
+        return 1.0
+    return 1e-2
+
+
+def _read_gridded(filename: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Generic reader for regular lat/lon amp/phase constituent grids.
+
+    Covers the FES2004/FES2022/DTU23/GOT-style deliveries: 1-D lat + lon
+    coordinates with 2-D amplitude+phase (or real+imag) fields. Variable
+    names and amplitude units are probed rather than assumed.
+    """
+    from math import pi
+    with netCDF4.Dataset(filename) as f:
+        low = {name.lower(): name for name in f.variables}
+
+        def pick(*candidates):
+            for c in candidates:
+                if c in low:
+                    return f.variables[low[c]]
+            return None
+
+        lat_v = pick("lat", "latitude", "y")
+        lon_v = pick("lon", "longitude", "x")
+        amp_v = pick("amplitude", "amp", "ha", "h_amp", "tide_amp")
+        pha_v = pick("phase", "pha", "hg", "phase_lag", "h_pha", "tide_pha")
+        if lat_v is None or lon_v is None:
+            raise RuntimeError(
+                f"{filename.name}: no lat/lon coordinates; "
+                f"variables={sorted(f.variables)}"
+            )
+        lat = np.asarray(lat_v[:])
+        lon = np.asarray(lon_v[:])
+
+        if amp_v is not None and pha_v is not None:
+            amp = np.asarray(amp_v[:], dtype=float) * _amp_scale(amp_v)
+            pha = np.asarray(pha_v[:], dtype=float)
+        else:
+            re_v = pick("real", "hre", "h_re", "wr")
+            im_v = pick("imag", "him", "h_im", "wi")
+            if re_v is None or im_v is None:
+                raise RuntimeError(
+                    f"{filename.name}: no amplitude/phase or real/imag pair; "
+                    f"variables={sorted(f.variables)}"
+                )
+            scale = _amp_scale(re_v)
+            re_ = np.asarray(re_v[:], dtype=float)
+            im_ = np.asarray(im_v[:], dtype=float)
+            amp = np.abs(re_ + 1j * im_) * scale
+            pha = np.arctan2(im_, re_) * 180.0 / pi
+
+    amp = np.ma.filled(amp, fill_value=0.0)
+    pha = np.ma.filled(pha, fill_value=0.0)
+    # Grids may be (lat, lon) or (lon, lat); orient to (lat, lon).
+    if amp.shape == (len(lon), len(lat)) and len(lat) != len(lon):
+        amp, pha = amp.T, pha.T
+    grid_lon, grid_lat = np.meshgrid(lon, lat)
+    return grid_lat.flatten(), grid_lon.flatten(), amp.flatten(), pha.flatten()
+
+
 _MODELS = {
     "tpxo9": {
         "label": "TPXO9-Atlas",
@@ -136,6 +238,33 @@ _MODELS = {
         "label": "EOT20",
         "input_fn": _eot20_input,
         "read_fn": _read_eot20,
+    },
+    # TPXO10-Atlas ships in the same h_{const}_tpxo10_atlas_* transposed
+    # layout as TPXO9-Atlas, so LoadDef's tpxo9atlas reader applies.
+    "tpxo10": {
+        "label": "TPXO10-Atlas",
+        "input_fn": _token_input("tpxo10"),
+        "read_fn": _read_tpxo9,
+    },
+    "fes2022": {
+        "label": "FES2022b",
+        "input_fn": _token_input("fes2022"),
+        "read_fn": _read_gridded,
+    },
+    "fes2004": {
+        "label": "FES2004",
+        "input_fn": _token_input("fes2004"),
+        "read_fn": _read_gridded,
+    },
+    "dtu23": {
+        "label": "DTU23",
+        "input_fn": _token_input("dtu23"),
+        "read_fn": _read_gridded,
+    },
+    "got55": {
+        "label": "GOT55",
+        "input_fn": _token_input("got"),
+        "read_fn": _read_gridded,
     },
 }
 

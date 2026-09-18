@@ -455,7 +455,8 @@ def _make_loaddef_env(ctx):
 @click.option("--stations", default=None,
               help="Comma-separated list of stations.")
 @click.option("--tide-model", default="FES2014", show_default=True,
-              help="Tide model (FES2014, TPXO9, EOT20).")
+              help="Tide model (FES2014, FES2022b, FES2004, TPXO9, TPXO10, "
+                   "EOT20, DTU23, GOT55).")
 @click.option("--earth-model", default="PREM", show_default=True,
               help="Earth model (PREM or custom name).")
 @click.option("--mpi-np", type=int, default=None,
@@ -975,7 +976,8 @@ def cloud_run_gipsyx(ctx, stations, year, s3_bucket, s3_prefix, s3_rinex_prefix,
 @click.option("--stations", required=True,
               help="Comma-separated stations to process.")
 @click.option("--tide-model", default="TPXO9", show_default=True,
-              help="Tide model (TPXO9, FES2014, EOT20).")
+              help="Tide model (TPXO9, TPXO10, FES2014, FES2022b, FES2004, "
+                   "EOT20, DTU23, GOT55).")
 @click.option("--earth-model", default="PREM", show_default=True)
 @click.option("--mpi-np", default=4, type=int, show_default=True,
               help="MPI ranks per station's convolution.")

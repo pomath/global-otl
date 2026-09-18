@@ -19,12 +19,20 @@ from gotl.loaddef.runner import run_convolution, run_greens_functions, run_love_
 
 log = logging.getLogger(__name__)
 
-# Mapping from user-facing tide model name to convolution grid prefix
+# Mapping from user-facing tide model name to convolution grid prefix.
+# Grids are produced by scripts/loaddef/gen_convgf.py from the raw model
+# archives; a model listed here without its convgf_* grids in
+# {data_dir}/Grid_Files/nc/OTL will fail at the convolution step.
 TIDE_MODEL_PREFIXES = {
+    "DTU23": "convgf_DTU23",
+    "EOT20": "convgf_EOT20",
+    "FES2004": "convgf_FES2004",
     "FES2014": "convgf_FES2014",
     "FES2014b": "convgf_FES2014",
+    "FES2022b": "convgf_FES2022b",
+    "GOT55": "convgf_GOT55",
     "TPXO9": "convgf_TPXO9-Atlas",
-    "EOT20": "convgf_EOT20",
+    "TPXO10": "convgf_TPXO10-Atlas",
 }
 
 

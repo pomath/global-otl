@@ -79,7 +79,8 @@ def process_loaddef_batch_remote(
         stations: 4-letter station codes to process.
         s3_bucket: S3 bucket for input bundles + output .otl files.
         s3_otl_prefix: S3 prefix for output .otl files (e.g. 'otl_params/TPXO9').
-        tide_model: 'TPXO9', 'FES2014', or 'EOT20'.
+        tide_model: any key of gotl.loaddef.batch.TIDE_MODEL_PREFIXES
+            (the bundle must include that model's convgf_* grids).
         earth_model: 'PREM' (default) or other.
         mpi_np: MPI ranks per station's convolution. 4 fits ~20 GB peak;
             higher uses more RAM, possibly faster. r6i.4xlarge has 128 GB

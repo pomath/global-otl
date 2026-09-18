@@ -40,7 +40,10 @@ def _current_fleet(otl_params: Path) -> list[str]:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("tide_model", help="FES2014 | TPXO9 | EOT20")
+    ap.add_argument("tide_model",
+                    help="Any key of gotl.loaddef.batch.TIDE_MODEL_PREFIXES "
+                         "(FES2014 | FES2022b | FES2004 | TPXO9 | TPXO10 | "
+                         "EOT20 | DTU23 | GOT55)")
     ap.add_argument("--stations", default=None,
                     help="Comma-separated station list (default: stations "
                          "with an existing FES2014 .otl).")

@@ -3,7 +3,8 @@
 Global GPS ocean tidal loading (OTL) analysis. `gotl` processes worldwide IGS/GNSS
 GPS stations through a GipsyX kinematic-PPP -> trajectory-model -> harmonic-analysis
 pipeline to estimate per-station ocean tidal loading displacement coefficients, then
-evaluates ocean tide models (TPXO9, FES2014b, EOT20) against the GPS-observed signal.
+evaluates ocean tide models (TPXO9/TPXO10-Atlas, FES2004/FES2014b/FES2022b, EOT20,
+DTU23, GOT5.5) against the GPS-observed signal.
 
 ## What it does
 
@@ -40,7 +41,10 @@ This repository contains the analysis code only. To run the full pipeline you al
 - **[LoadDef](https://github.com/hrmartens/LoadDef)** (Martens et al.) - load-deformation toolkit (Phase 2).
 - **IERS `hardisp`** - Fortran source is vendored under `hardisp/`; build with
   `cd hardisp/src && make`, then link `hardisp_exe`.
-- **Ocean tide model grids** - TPXO9-atlas, FES2014b, EOT20 NetCDF files from the model providers.
+- **Ocean tide model grids** - per-constituent NetCDF files from the model providers
+  (TPXO9/TPXO10-atlas from OSU, FES2004/FES2014b/FES2022b from AVISO+, EOT20 from
+  DGFI-TUM, DTU23 from DTU Space, GOT5.5 from NASA GSFC), converted to LoadDef
+  `convgf_*` grids with `scripts/loaddef/gen_convgf.py`.
 
 Large inputs/outputs (RINEX, tide grids, results, caches) are gitignored and supplied via
 environment variables (`GOTL_*`).
